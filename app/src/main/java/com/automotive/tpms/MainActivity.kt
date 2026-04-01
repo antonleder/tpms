@@ -5,13 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.automotive.tpms.ui.Greeting
+//import com.automotive.tpms.ui.Greeting
+import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,11 +38,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TpmsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
+                    MockUp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }

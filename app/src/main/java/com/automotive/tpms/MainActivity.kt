@@ -10,13 +10,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 //import com.automotive.tpms.ui.Greeting
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val BUNDLE_LOG_LINES_KEY = "logLines"
+    }
+
+    private val logLines = mutableStateListOf<String>()
+
+    private fun addLogLine(line: String) {
+        val timestamp = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(System.currentTimeMillis())
+        logLines.add("[$timestamp] $line\n")
+    }
+
     /** Basic application startup logic that happens only once for the entire life of the activity
      *
      * TODO:
@@ -27,6 +41,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")
 
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
          * The method annotated with @OnLifecycleEvent is called
@@ -39,7 +55,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             TpmsTheme {
                 Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
-                    MockUp(modifier = Modifier.padding(innerPadding))
+                    MockUp(modifier = Modifier.padding(innerPadding), logLines = logLines)
                 }
             }
         }
@@ -54,6 +70,12 @@ class MainActivity : ComponentActivity() {
      */
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
+
+        addLogLine("onRestoreInstanceState(): Activity state restored")
+
+        savedInstanceState.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
+            logLines.addAll(result)
+        }
     }
 
     /**
@@ -75,6 +97,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStart() {
         super.onStart()
+
+        addLogLine("onStart(): Activity visible to the user")
     }
 
     /** Handle the Activity comes to the foreground and interacts with the user.
@@ -100,6 +124,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
+
+        addLogLine("onResume(): Activity in the foreground")
     }
 
     /** Handle the activity is no longer in the foreground due to an interruptive event.
@@ -146,6 +172,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onPause() {
         super.onPause()
+
+        addLogLine("onPause(): Activity in the background")
     }
 
     /** Handle the activity becomes completely invisible to the user.
@@ -185,6 +213,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStop() {
         super.onStop()
+
+        addLogLine("onStop(): Activity completely invisible to the user")
     }
 
     /** Handle the Activity comes back from the Stopped state to interact with the user.
@@ -206,6 +236,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onRestart() {
         super.onRestart()
+
+        addLogLine("onRestart(): Activity returned to the foreground")
     }
 
     /** Handle the Activity pre-destruction
@@ -228,6 +260,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onDestroy() {
         super.onDestroy()
+
+        addLogLine("onDestroy(): Activity destroyed")
     }
 
     /** Handle HActivity's state saving before stopping it.
@@ -248,6 +282,9 @@ class MainActivity : ComponentActivity() {
      */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+
+        addLogLine("onSaveInstanceState(): Activity state saved")
+
+        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, logLines.toCollection(ArrayList()))
     }
 }
-

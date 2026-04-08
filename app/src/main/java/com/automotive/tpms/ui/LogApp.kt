@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.automotive.tpms.R
+import com.automotive.tpms.activity.action.ActivityAction
 
 data object LogApp {
     const val LOG_MAX_HEIGHT_FRACTION = 0.65f
@@ -32,12 +33,16 @@ data object LogApp {
 
 @Preview(showBackground = true)
 @Composable
-fun MockUp(modifier: Modifier = Modifier,
-           logLines: SnapshotStateList<String> = mutableStateListOf<String>()
+fun MockUp(
+    activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
+    modifier: Modifier = Modifier,
+    logLines: SnapshotStateList<String> = mutableStateListOf<String>()
 ) {
-    Column(modifier = modifier
-        .fillMaxSize()
-        .padding(LogApp.BTN_PADDING)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(LogApp.BTN_PADDING)
+    ) {
         Row(modifier = Modifier.fillMaxHeight(LogApp.LOG_MAX_HEIGHT_FRACTION)) {
             LazyColumn(
                 modifier = Modifier
@@ -51,21 +56,26 @@ fun MockUp(modifier: Modifier = Modifier,
                 }
             }
         }
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .weight(LogApp.CTRLS_MAX_HEIGHT_FRACTION)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(LogApp.CTRLS_MAX_HEIGHT_FRACTION)
         ) {
-            Column(modifier = Modifier.fillMaxHeight(),
+            Column(
+                modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
                 val btnModifier = Modifier.fillMaxWidth()
 
-                // Open Activity B
+                // Open another Activity
                 Button(
                     onClick = {},
                     modifier = btnModifier
                 ) {
-                    Text(text = stringResource(R.string.act_b_btn_text))
+                    Text(
+                        text = stringResource(R.string.act_btn_text) +
+                                if (activityAction.activityName.isEmpty()) "" else " " + activityAction.activityName
+                    )
                 }
                 // Start background task (Service)
                 Button(

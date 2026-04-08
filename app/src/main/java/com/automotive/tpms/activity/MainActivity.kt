@@ -1,34 +1,42 @@
-package com.automotive.tpms
+package com.automotive.tpms.activity
 
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-//import com.automotive.tpms.ui.Greeting
+import com.automotive.tpms.R
+import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class MainActivity : ComponentActivity() {
+class MainActivity(
+    private var activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
+) :
+    ComponentActivity() {
     companion object {
         const val BUNDLE_LOG_LINES_KEY = "logLines"
+        const val LOG_TIME_PATTERN = "HH:mm:ss.SSS"
     }
 
-    private val logLines = mutableStateListOf<String>()
+    private val loggedLines = mutableStateListOf<String>()
 
     private fun addLogLine(line: String) {
-        val timestamp = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(System.currentTimeMillis())
-        logLines.add("[$timestamp] $line\n")
+        val timestamp =
+            SimpleDateFormat(
+                LOG_TIME_PATTERN,
+                Locale.getDefault()
+            ).format(System.currentTimeMillis())
+        val activityName: String = activityAction.activityName
+        loggedLines.add("[$timestamp] $activityName: $line\n")
     }
 
     /** Basic application startup logic that happens only once for the entire life of the activity
@@ -42,6 +50,35 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        savedInstanceState?.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
+            loggedLines.addAll(result.sorted())
+        }
+
+        // Extracting default activity action from the manifest if provided action is empty
+        if (activityAction == ActivityAction.EMPTY_ACTIVITY_ACTION) {
+            val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
+                getComponentName(), PackageManager.GET_META_DATA
+            );
+
+            // Read default activity action from the manifest
+            val modeString: String? =
+                actInfo.metaData.getString(getString(R.string.default_activity_act_param));
+
+            // Try to convert string to the valid enum value
+            modeString?.let {
+                try {
+                    val defActivityAction = enumValueOf<ActivityAction>(modeString)
+                    if (defActivityAction != ActivityAction.EMPTY_ACTIVITY_ACTION) {
+                        activityAction = defActivityAction
+                    }
+                } catch (e: IllegalArgumentException) {
+                    addLogLine("onCreate(): ERROR: unable to read default activity action from the manifest")
+                }
+            }
+
+            check(activityAction != ActivityAction.EMPTY_ACTIVITY_ACTION)
+        }
+
         addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")
 
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
@@ -54,8 +91,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TpmsTheme {
-                Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
-                    MockUp(modifier = Modifier.padding(innerPadding), logLines = logLines)
+                Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
+                    MockUp(
+                        activityAction,
+                        modifier = Modifier.Companion.padding(innerPadding),
+                        logLines = loggedLines
+                    )
                 }
             }
         }
@@ -72,10 +113,6 @@ class MainActivity : ComponentActivity() {
         super.onRestoreInstanceState(savedInstanceState)
 
         addLogLine("onRestoreInstanceState(): Activity state restored")
-
-        savedInstanceState.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
-            logLines.addAll(result)
-        }
     }
 
     /**
@@ -264,7 +301,7 @@ class MainActivity : ComponentActivity() {
         addLogLine("onDestroy(): Activity destroyed")
     }
 
-    /** Handle HActivity's state saving before stopping it.
+    /** Handle Activity's state saving before stopping it.
      *
      * Is not called when:
      * * the user explicitly closes the activity,
@@ -285,6 +322,6 @@ class MainActivity : ComponentActivity() {
 
         addLogLine("onSaveInstanceState(): Activity state saved")
 
-        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, logLines.toCollection(ArrayList()))
+        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, loggedLines.toCollection(ArrayList()))
     }
 }

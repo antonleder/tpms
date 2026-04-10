@@ -1,6 +1,11 @@
 package com.automotive.tpms.ui
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,11 +23,16 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.automotive.tpms.R
+import com.automotive.tpms.activity.MainActivity
+import com.automotive.tpms.activity.MainActivity.Companion.DEFAULT_ACTIVITY_ACTION_PARAM_NAME
 import com.automotive.tpms.activity.action.ActivityAction
+import com.automotive.tpms.activity.action.nextActivity
+import com.automotive.tpms.context.findActivity
 
 data object LogApp {
     const val LOG_MAX_HEIGHT_FRACTION = 0.65f
@@ -34,6 +44,7 @@ data object LogApp {
 @Preview(showBackground = true)
 @Composable
 fun MockUp(
+    context: Context = LocalContext.current,
     activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
     modifier: Modifier = Modifier,
     logLines: SnapshotStateList<String> = mutableStateListOf<String>()
@@ -43,6 +54,12 @@ fun MockUp(
             .fillMaxSize()
             .padding(LogApp.BTN_PADDING)
     ) {
+        Row(
+            modifier = modifier.fillMaxWidth().border(1.dp, Color.Black),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(text = activityAction.activityName)
+        }
         Row(modifier = Modifier.fillMaxHeight(LogApp.LOG_MAX_HEIGHT_FRACTION)) {
             LazyColumn(
                 modifier = Modifier
@@ -69,12 +86,26 @@ fun MockUp(
 
                 // Open another Activity
                 Button(
-                    onClick = {},
+                    onClick = {
+                        val thisActivity: Activity? = context.findActivity()
+                        thisActivity?.let {
+                            var intent = Intent(thisActivity, MainActivity::class.java).apply {
+                                putExtra(
+                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
+                                    activityAction.nextActivity().name
+                                )
+                            }
+                            try {
+                                thisActivity.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                e.printStackTrace()
+                            }
+                        }
+                    },
                     modifier = btnModifier
                 ) {
                     Text(
-                        text = stringResource(R.string.act_btn_text) +
-                                if (activityAction.activityName.isEmpty()) "" else " " + activityAction.activityName
+                        text = stringResource(R.string.act_btn_text) + " " + activityAction.nextActivity().activityName
                     )
                 }
                 // Start background task (Service)

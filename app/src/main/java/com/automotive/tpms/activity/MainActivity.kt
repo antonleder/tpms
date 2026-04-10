@@ -17,6 +17,7 @@ import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.jvm.java
 
 class MainActivity(
     private var activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
@@ -25,6 +26,7 @@ class MainActivity(
     companion object {
         const val BUNDLE_LOG_LINES_KEY = "logLines"
         const val LOG_TIME_PATTERN = "HH:mm:ss.SSS"
+        const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
     }
 
     private val loggedLines = mutableStateListOf<String>()
@@ -37,6 +39,26 @@ class MainActivity(
             ).format(System.currentTimeMillis())
         val activityName: String = activityAction.activityName
         loggedLines.add("[$timestamp] $activityName: $line\n")
+    }
+
+    private fun getActivityActionFromManifest(): ActivityAction {
+        val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
+            getComponentName(), PackageManager.GET_META_DATA
+        );
+
+        // Read default activity action from the manifest
+        val modeString: String? =
+            actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
+
+        // Try to convert string to the valid enum value
+        modeString?.let {
+            return ActivityAction.fromString(
+                str = modeString,
+                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
+            )
+        }
+
+        return ActivityAction.EMPTY_ACTIVITY_ACTION
     }
 
     /** Basic application startup logic that happens only once for the entire life of the activity
@@ -54,28 +76,21 @@ class MainActivity(
             loggedLines.addAll(result.sorted())
         }
 
+        addLogLine("onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"}")
+
+        // check whether the Activity was launched from other activity with an intent and read
+        // string extra parameter to configure the activity
+        intent?.let {
+            intent.getStringExtra(DEFAULT_ACTIVITY_ACTION_PARAM_NAME)?.let {
+                activityAction = ActivityAction.fromString(
+                    str = it,
+                    logError = { str -> addLogLine("onCreate() - intent string extra ´$DEFAULT_ACTIVITY_ACTION_PARAM_NAME´: $str") })
+            }
+        }
+
         // Extracting default activity action from the manifest if provided action is empty
         if (activityAction == ActivityAction.EMPTY_ACTIVITY_ACTION) {
-            val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
-                getComponentName(), PackageManager.GET_META_DATA
-            );
-
-            // Read default activity action from the manifest
-            val modeString: String? =
-                actInfo.metaData.getString(getString(R.string.default_activity_act_param));
-
-            // Try to convert string to the valid enum value
-            modeString?.let {
-                try {
-                    val defActivityAction = enumValueOf<ActivityAction>(modeString)
-                    if (defActivityAction != ActivityAction.EMPTY_ACTIVITY_ACTION) {
-                        activityAction = defActivityAction
-                    }
-                } catch (e: IllegalArgumentException) {
-                    addLogLine("onCreate(): ERROR: unable to read default activity action from the manifest")
-                }
-            }
-
+            activityAction = getActivityActionFromManifest()
             check(activityAction != ActivityAction.EMPTY_ACTIVITY_ACTION)
         }
 
@@ -93,7 +108,8 @@ class MainActivity(
             TpmsTheme {
                 Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        activityAction,
+                        context = this,
+                        activityAction = activityAction,
                         modifier = Modifier.Companion.padding(innerPadding),
                         logLines = loggedLines
                     )

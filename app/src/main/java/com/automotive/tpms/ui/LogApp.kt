@@ -32,7 +32,6 @@ import com.automotive.tpms.activity.MainActivity
 import com.automotive.tpms.activity.MainActivity.Companion.DEFAULT_ACTIVITY_ACTION_PARAM_NAME
 import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.activity.action.nextActivity
-import com.automotive.tpms.context.findActivity
 
 data object LogApp {
     const val LOG_MAX_HEIGHT_FRACTION = 0.65f
@@ -41,10 +40,11 @@ data object LogApp {
     val BTN_PADDING = 8.dp
 }
 
+// TODO: coding style
+// TODO: compose should not know how screen switching is performed -> replace with Navigator in future
 @Preview(showBackground = true)
 @Composable
 fun MockUp(
-    context: Context = LocalContext.current,
     activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
     modifier: Modifier = Modifier,
     logLines: SnapshotStateList<String> = mutableStateListOf<String>()
@@ -55,11 +55,14 @@ fun MockUp(
             .padding(LogApp.BTN_PADDING)
     ) {
         Row(
-            modifier = modifier.fillMaxWidth().border(1.dp, Color.Black),
+            modifier = modifier
+                .fillMaxWidth()
+                .border(1.dp, Color.Black),
             horizontalArrangement = Arrangement.Center
         ) {
             Text(text = activityAction.activityName)
         }
+
         Row(modifier = Modifier.fillMaxHeight(LogApp.LOG_MAX_HEIGHT_FRACTION)) {
             LazyColumn(
                 modifier = Modifier
@@ -67,12 +70,12 @@ fun MockUp(
                     .fillMaxSize(),
                 state = rememberLazyListState()
             ) {
-                // the scroll-list is empty in the beginning
                 items(logLines) { line ->
                     Text(text = line)
                 }
             }
         }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,24 +85,23 @@ fun MockUp(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
+                val context: Context = LocalContext.current
                 val btnModifier = Modifier.fillMaxWidth()
 
                 // Open another Activity
                 Button(
                     onClick = {
-                        val thisActivity: Activity? = context.findActivity()
-                        thisActivity?.let {
-                            var intent = Intent(thisActivity, MainActivity::class.java).apply {
-                                putExtra(
-                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
-                                    activityAction.nextActivity().name
-                                )
-                            }
-                            try {
-                                thisActivity.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                e.printStackTrace()
-                            }
+                        val intent = Intent(context, MainActivity::class.java).apply {
+                            putExtra(
+                                DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
+                                activityAction.nextActivity().name
+                            )
+                        }
+                        if ( intent.resolveActivity(context.packageManager) != null ) {
+                            context.startActivity(intent)
+                        }
+                        else {
+                            // TODO: show error message
                         }
                     },
                     modifier = btnModifier
@@ -108,6 +110,7 @@ fun MockUp(
                         text = stringResource(R.string.act_btn_text) + " " + activityAction.nextActivity().activityName
                     )
                 }
+
                 // Start background task (Service)
                 Button(
                     onClick = {},
@@ -115,6 +118,7 @@ fun MockUp(
                 ) {
                     Text(text = stringResource(R.string.start_bg_service_btn_text))
                 }
+
                 // Send broadcast
                 Button(
                     onClick = {},
@@ -122,6 +126,7 @@ fun MockUp(
                 ) {
                     Text(text = stringResource(R.string.send_bcast_btn_text))
                 }
+
                 // Request runtime permission
                 Button(
                     onClick = {},
@@ -129,6 +134,7 @@ fun MockUp(
                 ) {
                     Text(text = stringResource(R.string.runtime_perm_btn_text))
                 }
+
                 // Read data from system ContentProvider (e.g. Contacts or MediaStore — read-only via ContentResolver)
                 Button(
                     onClick = {},

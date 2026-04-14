@@ -10,7 +10,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Tpms">
+        android:theme="@style/Theme.Tpms"
+        android:appComponentFactory=".activity.factory.TpmsActivityFactory"
+        tools:replace="android:appComponentFactory">
         <activity
             android:name=".activity.MainActivity"
             android:exported="true"

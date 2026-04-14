@@ -9,38 +9,38 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
-import com.automotive.tpms.R
 import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
-import java.text.SimpleDateFormat
-import java.util.Locale
-import kotlin.jvm.java
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+/**
+ * TODO:
+ * * activity should not have parameters, only layout parameter for view has sense
+ */
 class MainActivity(
-    private var activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
+    private var activityAction: ActivityAction,
 ) :
     ComponentActivity() {
-    companion object {
-        const val BUNDLE_LOG_LINES_KEY = "logLines"
-        const val LOG_TIME_PATTERN = "HH:mm:ss.SSS"
-        const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
-    }
 
-    private val loggedLines = mutableStateListOf<String>()
+    private val loggedLines = mutableListOf<String>()
 
     private fun addLogLine(line: String) {
-        val timestamp =
-            SimpleDateFormat(
-                LOG_TIME_PATTERN,
-                Locale.getDefault()
-            ).format(System.currentTimeMillis())
+        @OptIn(ExperimentalTime::class)
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
+        val timestamp = LOG_TIME_PATTERN.format(now)
         val activityName: String = activityAction.activityName
         loggedLines.add("[$timestamp] $activityName: $line\n")
     }
 
+    // TODO: obtain parameters from the Bundle
     private fun getActivityActionFromManifest(): ActivityAction {
         val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
             getComponentName(), PackageManager.GET_META_DATA
@@ -63,7 +63,7 @@ class MainActivity(
 
     /** Basic application startup logic that happens only once for the entire life of the activity
      *
-     * TODO:
+     * Typical actions:
      * * Initializing member variables: adapters, and data sources.
      * * Associating the activity with a ViewModel for state management.
      * * Using the savedInstanceState Bundle to restore data if the activity is being recreated
@@ -76,7 +76,10 @@ class MainActivity(
             loggedLines.addAll(result.sorted())
         }
 
-        addLogLine("onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"}")
+        addLogLine(
+            "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " +
+                    "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
+        )
 
         // check whether the Activity was launched from other activity with an intent and read
         // string extra parameter to configure the activity
@@ -108,15 +111,18 @@ class MainActivity(
             TpmsTheme {
                 Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        context = this,
                         activityAction = activityAction,
                         modifier = Modifier.Companion.padding(innerPadding),
-                        logLines = loggedLines
+                        logLines = loggedLines.toMutableStateList()
                     )
                 }
             }
         }
     }
+
+    // TODO: empty Android compose project -> App compose function
+    // move out all of the compose related stuff from Activity
+
 
     /** Restore the Activity state if there was something saved before.
      *
@@ -339,5 +345,19 @@ class MainActivity(
         addLogLine("onSaveInstanceState(): Activity state saved")
 
         outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, loggedLines.toCollection(ArrayList()))
+    }
+
+    companion object {
+        const val BUNDLE_LOG_LINES_KEY = "logLines"
+        val LOG_TIME_PATTERN = LocalTime.Format {
+            hour()
+            char(':')
+            minute()
+            char(':')
+            second()
+            char('.')
+            secondFraction(3) // 3 цифры для миллисекунд
+        }
+        const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
     }
 }

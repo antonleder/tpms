@@ -25,7 +25,7 @@ enum class ActivityAction(
     );
 
     companion object {
-        fun fromString(str: String, logError: (String) -> Unit): ActivityAction {
+        fun fromString(str: String, logError: (String) -> Unit = { _ -> }): ActivityAction {
             try {
                 enumValueOf<ActivityAction>(str)?.let { return it }
             } catch (e: IllegalArgumentException) {

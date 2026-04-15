@@ -6,12 +6,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import com.automotive.tpms.activity.action.ActivityAction
+import com.automotive.tpms.activity.viewmodel.MainViewModel
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
 import kotlinx.datetime.LocalTime
@@ -27,14 +29,14 @@ import kotlin.time.ExperimentalTime
  */
 class MainActivity(
     private var activityAction: ActivityAction,
-) :
-    ComponentActivity() {
+) : ComponentActivity() {
 
+    private val viewModel: MainViewModel by viewModels()
     private val loggedLines = mutableListOf<String>()
 
     private fun addLogLine(line: String) {
-        @OptIn(ExperimentalTime::class)
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
+        @OptIn(ExperimentalTime::class) val now =
+            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
         val timestamp = LOG_TIME_PATTERN.format(now)
         val activityName: String = activityAction.activityName
         loggedLines.add("[$timestamp] $activityName: $line\n")
@@ -47,15 +49,13 @@ class MainActivity(
         );
 
         // Read default activity action from the manifest
-        val modeString: String? =
-            actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
+        val modeString: String? = actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
 
         // Try to convert string to the valid enum value
         modeString?.let {
             return ActivityAction.fromString(
                 str = modeString,
-                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
-            )
+                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") })
         }
 
         return ActivityAction.EMPTY_ACTIVITY_ACTION
@@ -77,8 +77,7 @@ class MainActivity(
         }
 
         addLogLine(
-            "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " +
-                    "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
+            "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " + "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
         )
 
         // check whether the Activity was launched from other activity with an intent and read

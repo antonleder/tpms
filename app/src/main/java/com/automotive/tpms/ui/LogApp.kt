@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -27,14 +28,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.automotive.tpms.R
 import com.automotive.tpms.activity.MainActivity
 import com.automotive.tpms.activity.MainActivity.Companion.DEFAULT_ACTIVITY_ACTION_PARAM_NAME
 import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.activity.action.nextActivity
+import com.automotive.tpms.activity.viewmodel.MainViewModel
 
 data object LogApp {
-    const val LOG_MAX_HEIGHT_FRACTION = 0.65f
+    const val LOG_MAX_HEIGHT_FRACTION = 0.6f
     const val CTRLS_MAX_HEIGHT_FRACTION = 1.0f - LOG_MAX_HEIGHT_FRACTION
     val LOG_LIST_BGCOLOR = Color.LightGray
     val BTN_PADDING = 8.dp
@@ -47,8 +50,11 @@ data object LogApp {
 fun MockUp(
     activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
     modifier: Modifier = Modifier,
-    logLines: SnapshotStateList<String> = mutableStateListOf<String>()
+    logLines: SnapshotStateList<String> = mutableStateListOf<String>(),
+    viewModel: MainViewModel = viewModel()
 ) {
+    val count by viewModel.counter
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -60,7 +66,7 @@ fun MockUp(
                 .border(1.dp, Color.Black),
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(text = activityAction.activityName)
+            Text(text = "${activityAction.activityName} (counter: $count)")
         }
 
         Row(modifier = Modifier.fillMaxHeight(LogApp.LOG_MAX_HEIGHT_FRACTION)) {
@@ -97,10 +103,9 @@ fun MockUp(
                                 activityAction.nextActivity().name
                             )
                         }
-                        if ( intent.resolveActivity(context.packageManager) != null ) {
+                        if (intent.resolveActivity(context.packageManager) != null) {
                             context.startActivity(intent)
-                        }
-                        else {
+                        } else {
                             // TODO: show error message
                         }
                     },
@@ -109,6 +114,12 @@ fun MockUp(
                     Text(
                         text = stringResource(R.string.act_btn_text) + " " + activityAction.nextActivity().activityName
                     )
+                }
+
+                Button(onClick = {
+                    viewModel.incrementCounter()
+                }, modifier = btnModifier) {
+                    Text(text = stringResource(R.string.increment_counter))
                 }
 
                 // Start background task (Service)

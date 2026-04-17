@@ -16,6 +16,7 @@ import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.activity.viewmodel.MainViewModel
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.char
@@ -27,10 +28,9 @@ import kotlin.time.ExperimentalTime
  * TODO:
  * * activity should not have parameters, only layout parameter for view has sense
  */
-class MainActivity(
-    private var activityAction: ActivityAction,
-) : ComponentActivity() {
-
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    private var activityAction = ActivityAction.EMPTY_ACTIVITY_ACTION
     private val viewModel: MainViewModel by viewModels()
     private val loggedLines = mutableListOf<String>()
 
@@ -42,35 +42,9 @@ class MainActivity(
         loggedLines.add("[$timestamp] $activityName: $line\n")
     }
 
-    // TODO: obtain parameters from the Bundle
-    private fun getActivityActionFromManifest(): ActivityAction {
-        val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
-            getComponentName(), PackageManager.GET_META_DATA
-        );
-
-        // Read default activity action from the manifest
-        val modeString: String? = actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
-
-        // Try to convert string to the valid enum value
-        modeString?.let {
-            return ActivityAction.fromString(
-                str = modeString,
-                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") })
-        }
-
-        return ActivityAction.EMPTY_ACTIVITY_ACTION
-    }
-
-    /** Basic application startup logic that happens only once for the entire life of the activity
-     *
-     * Typical actions:
-     * * Initializing member variables: adapters, and data sources.
-     * * Associating the activity with a ViewModel for state management.
-     * * Using the savedInstanceState Bundle to restore data if the activity is being recreated
-     *   (e.g., after a screen rotation).
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         savedInstanceState?.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
             loggedLines.addAll(result.sorted())
@@ -79,6 +53,8 @@ class MainActivity(
         addLogLine(
             "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " + "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
         )
+
+        addLogLine("onCreate(): ViewModel timestamp: ${viewModel.timestamp}")
 
         // check whether the Activity was launched from other activity with an intent and read
         // string extra parameter to configure the activity
@@ -97,6 +73,14 @@ class MainActivity(
         }
 
         addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")
+        /** Basic application startup logic that happens only once for the entire life of the activity
+         *
+         * Typical actions:
+         * * Initializing member variables: adapters, and data sources.
+         * * Associating the activity with a ViewModel for state management.
+         * * Using the savedInstanceState Bundle to restore data if the activity is being recreated
+         *   (e.g., after a screen rotation).
+         */
 
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
          * The method annotated with @OnLifecycleEvent is called
@@ -118,9 +102,27 @@ class MainActivity(
             }
         }
     }
-
     // TODO: empty Android compose project -> App compose function
+
     // move out all of the compose related stuff from Activity
+    // TODO: obtain parameters from the Bundle
+    private fun getActivityActionFromManifest(): ActivityAction {
+        val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
+            getComponentName(), PackageManager.GET_META_DATA
+        );
+
+        // Read default activity action from the manifest
+        val modeString: String? = actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
+
+        // Try to convert string to the valid enum value
+        modeString?.let {
+            return ActivityAction.fromString(
+                str = modeString,
+                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") })
+        }
+
+        return ActivityAction.EMPTY_ACTIVITY_ACTION
+    }
 
 
     /** Restore the Activity state if there was something saved before.

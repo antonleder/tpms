@@ -1,4 +1,7 @@
 package com.automotive.tpms.app
 
-class TpmsApplication {
-}
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class TpmsApplication : Application()

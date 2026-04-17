@@ -1,7 +1,5 @@
 package com.automotive.tpms.ui
 
-import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -28,7 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.automotive.tpms.R
 import com.automotive.tpms.activity.MainActivity
 import com.automotive.tpms.activity.MainActivity.Companion.DEFAULT_ACTIVITY_ACTION_PARAM_NAME
@@ -45,13 +43,13 @@ data object LogApp {
 
 // TODO: coding style
 // TODO: compose should not know how screen switching is performed -> replace with Navigator in future
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun MockUp(
     activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
     modifier: Modifier = Modifier,
     logLines: SnapshotStateList<String> = mutableStateListOf<String>(),
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val count by viewModel.counter
 

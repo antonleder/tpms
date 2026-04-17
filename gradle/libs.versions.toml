@@ -9,9 +9,12 @@ activityCompose = "1.12.4"
 kotlin = "2.0.21"
 composeBom = "2026.02.01"
 kotlinxDatetime = "0.7.0-0.6.x-compat"
-comGoogleDaggerHiltAndroidGradlePlugin = "2.56.2"
-comGoogleDevtoolsKspGradlePlugin = "2.2.0-2.0.2"
+comGoogleDaggerHiltAndroidGradlePlugin = "2.59.2"
+comGoogleDevtoolsKspGradlePlugin = "2.0.21-1.0.28"
 hiltNavigationCompose = "1.3.0"
+
+hiltAndroid = "2.59.2"
+hiltCompiler = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,9 +34,15 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.7.1" }
 com-google-dagger-hilt-android-gradle-plugin = { group = "com.google.dagger.hilt.android", name = "com.google.dagger.hilt.android.gradle.plugin", version.ref = "comGoogleDaggerHiltAndroidGradlePlugin" }
 com-google-devtools-ksp-gradle-plugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "comGoogleDevtoolsKspGradlePlugin" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hiltAndroid" }
+hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hiltAndroid" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltCompiler" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "comGoogleDevtoolsKspGradlePlugin" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "comGoogleDaggerHiltAndroidGradlePlugin" }
 

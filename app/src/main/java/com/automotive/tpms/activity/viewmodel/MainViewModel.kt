@@ -5,6 +5,11 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.SavedStateHandle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.time.Clock
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
@@ -13,16 +18,20 @@ import kotlin.time.ExperimentalTime
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    // TODO: any repository interface dependency
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    private val _count = mutableStateOf(0)
+    private val _count = savedStateHandle.getMutableStateFlow(BUNDLE_COUNT_KEY, 0)
 
     @OptIn(ExperimentalTime::class)
     val timestamp: LocalTime =
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
-    val counter: State<Int> = _count
+    val counter: StateFlow<Int> = _count.asStateFlow()
 
     fun incrementCounter() {
-        _count.value++
+        savedStateHandle[BUNDLE_COUNT_KEY] = ++_count.value
+    }
+
+    companion object {
+        const val BUNDLE_COUNT_KEY = "count"
     }
 }

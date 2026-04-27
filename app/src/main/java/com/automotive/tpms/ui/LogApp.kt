@@ -1,7 +1,10 @@
 package com.automotive.tpms.ui
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.automotive.tpms.R
 import com.automotive.tpms.activity.MainActivity
@@ -34,6 +42,7 @@ import com.automotive.tpms.activity.MainActivity.Companion.DEFAULT_ACTIVITY_ACTI
 import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.activity.action.nextActivity
 import com.automotive.tpms.activity.viewmodel.MainViewModel
+import com.automotive.tpms.helper.contacts.readConacts
 
 data object LogApp {
     const val LOG_MAX_HEIGHT_FRACTION = 0.6f
@@ -50,9 +59,13 @@ fun MockUp(
     activityAction: ActivityAction = ActivityAction.EMPTY_ACTIVITY_ACTION,
     modifier: Modifier = Modifier,
     logLines: SnapshotStateList<String> = mutableStateListOf<String>(),
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    onContactsReadFn: (List<String>) -> Unit = {}
 ) {
     val count by viewModel.counter.collectAsState()
+
+    // Flag to call composable function for run-time permission request
+    var requestRuntimePermFlag by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -139,10 +152,40 @@ fun MockUp(
 
                 // Request runtime permission
                 Button(
-                    onClick = {},
+                    onClick = {
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.READ_CONTACTS
+                            )
+                            != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            // Ask for run-time permission further in the Compose context
+                            requestRuntimePermFlag = true
+                        } else {
+                            // permission is already granted -> read contacts
+                            val contactsList =
+                                readConacts(context.contentResolver) { name, phoneNumber ->
+                                    "$name: $phoneNumber"
+                                }
+                            // submit contacts data to the caller handler
+                            onContactsReadFn(contactsList)
+                        }
+                    },
                     modifier = btnModifier
                 ) {
                     Text(text = stringResource(R.string.runtime_perm_btn_text))
+
+                    if (requestRuntimePermFlag) {
+                        PermissionWithRationale(
+                            modifier = modifier,
+                            permissionToBeRequested = Manifest.permission.READ_CONTACTS,
+                            buttonText = stringResource(R.string.request_runtime_contacts_read_btn_text),
+                        ) {
+                            // permission is granted -> read contacts and submit to the caller handler
+                            val contactsList = readConacts(context.contentResolver) { name, phoneNumber -> "$name: $phoneNumber" }
+                            onContactsReadFn(contactsList)
+                        }
+                    }
                 }
 
                 // Read data from system ContentProvider (e.g. Contacts or MediaStore — read-only via ContentResolver)

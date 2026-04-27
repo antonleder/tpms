@@ -97,7 +97,9 @@ class MainActivity : ComponentActivity() {
                         activityAction = activityAction,
                         modifier = Modifier.Companion.padding(innerPadding),
                         logLines = loggedLines.toMutableStateList()
-                    )
+                    ) { contactsList ->
+                        addLogLine("Contacts list: $contactsList")
+                    }
                 }
             }
         }

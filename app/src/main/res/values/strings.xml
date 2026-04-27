@@ -2,8 +2,12 @@
     <string name="app_name">Tpms</string>
     <string name="start_bg_service_btn_text">Start bg service</string>
     <string name="send_bcast_btn_text">Send broadcast</string>
-    <string name="runtime_perm_btn_text">Request runtme permission</string>
+    <string name="runtime_perm_btn_text">Read contacts (runtime)</string>
     <string name="read_cp_data_btn_text">Read ContentProvider data</string>
     <string name="act_btn_text">Open</string>
     <string name="increment_counter">Increment counter</string>
+    <string name="runtime_access_justification">This is required to ensure the app can access Your contacts upon the functionality needs.</string>
+    <string name="contacts_access_request_dialog_title">Please give temporary runtime permission for the contacts access.</string>
+    <string name="user_agreement_btn_text">This is clear</string>
+    <string name="request_runtime_contacts_read_btn_text">Begin runtime contacts read</string>
 </resources>

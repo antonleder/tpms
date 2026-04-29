@@ -5,4 +5,6 @@
     <string name="runtime_perm_btn_text">Request runtme permission</string>
     <string name="read_cp_data_btn_text">Read ContentProvider data</string>
     <string name="act_btn_text">Open</string>
+    <string name="app_logs_header">Application Logs</string>
+    <string name="app_logs_footer">End of the ent log list</string>
 </resources>

@@ -51,14 +51,14 @@ class MainActivity(
             actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
 
         // Try to convert string to the valid enum value
-        modeString?.let {
-            return ActivityAction.fromString(
+        val action = modeString?.let {
+            ActivityAction.fromString(
                 str = modeString,
                 logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
             )
-        }
+        } ?: ActivityAction.EmptyActivityAction()
 
-        return ActivityAction.EMPTY_ACTIVITY_ACTION
+        return action
     }
 
     /** Basic application startup logic that happens only once for the entire life of the activity
@@ -92,9 +92,9 @@ class MainActivity(
         }
 
         // Extracting default activity action from the manifest if provided action is empty
-        if (activityAction == ActivityAction.EMPTY_ACTIVITY_ACTION) {
+        if (activityAction is ActivityAction.EmptyActivityAction) {
             activityAction = getActivityActionFromManifest()
-            check(activityAction != ActivityAction.EMPTY_ACTIVITY_ACTION)
+            check(activityAction !is ActivityAction.EmptyActivityAction)
         }
 
         addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")

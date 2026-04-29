@@ -76,9 +76,8 @@ fun FooterComposable(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun MockUp(
-    activityAction: ActivityAction = ActivityAction.EmptyActivityAction(),
+    activityAction: ActivityAction = ActivityAction.EmptyActivityAction,
     modifier: Modifier = Modifier,
-    logLines: SnapshotStateList<String> = mutableStateListOf<String>(),
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val LOG_MAX_HEIGHT_FRACTION = 0.65f
@@ -86,6 +85,7 @@ fun MockUp(
     val INTERNAL_PADDING = 8.dp
 
     val count by viewModel.counter.collectAsState()
+    val logLines by viewModel.logs.collectAsState()
 
     Column(
         modifier = modifier

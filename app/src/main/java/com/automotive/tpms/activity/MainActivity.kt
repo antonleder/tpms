@@ -24,22 +24,17 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-/**
- * TODO:
- * * activity should not have parameters, only layout parameter for view has sense
- */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private var activityAction: ActivityAction = ActivityAction.EmptyActivityAction()
+    private var activityAction: ActivityAction = ActivityAction.EmptyActivityAction
     private val viewModel: MainViewModel by viewModels()
-    private val loggedLines = mutableListOf<String>()
 
     private fun addLogLine(line: String) {
         @OptIn(ExperimentalTime::class) val now =
             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
         val timestamp = LOG_TIME_PATTERN.format(now)
         val activityName: String = activityAction.activityName
-        loggedLines.add("[$timestamp] $activityName: $line\n")
+        viewModel.addNewlog("[$timestamp] $activityName: $line\n")
     }
 
     // TODO: obtain parameters from the Bundle
@@ -52,13 +47,13 @@ class MainActivity : ComponentActivity() {
         val modeString: String? =
             actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
 
-        // Try to convert string to the valid enum value
+        // Try to convert string to the valid value
         val action = modeString?.let {
             ActivityAction.fromString(
                 str = modeString,
                 logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
             )
-        } ?: ActivityAction.EmptyActivityAction()
+        } ?: ActivityAction.EmptyActivityAction
 
         return action
     }
@@ -73,11 +68,6 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-        savedInstanceState?.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
-            loggedLines.addAll(result.sorted())
-        }
 
         addLogLine(
             "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " +
@@ -116,8 +106,6 @@ class MainActivity : ComponentActivity() {
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
          * The method annotated with @OnLifecycleEvent is called
          * => lifecycle-aware component performs any setup code it needs for the created state.
-         *
-         * TODO: Does this happen implicitly or requires explicit code operations?
          */
 
         enableEdgeToEdge()
@@ -127,16 +115,11 @@ class MainActivity : ComponentActivity() {
                     MockUp(
                         activityAction = activityAction,
                         modifier = Modifier.Companion.padding(innerPadding),
-                        logLines = loggedLines.toMutableStateList()
                     )
                 }
             }
         }
     }
-
-    // TODO: empty Android compose project -> App compose function
-    // move out all of the compose related stuff from Activity
-
 
     /** Restore the Activity state if there was something saved before.
      *
@@ -157,7 +140,7 @@ class MainActivity : ComponentActivity() {
      *
      * Called every time the Activity returns from the background.
      *
-     * TODO:
+     * Usual actions:
      * * Initialize maintained UI.
      * * Lifecycle-aware component (tied to the activity's lifecycle) receives the ON_START event.
      * * Dynamic BroadcastReceivers registration.
@@ -178,7 +161,7 @@ class MainActivity : ComponentActivity() {
      *
      * Occurs every time the Activity is returned to the foreground.
      *
-     * TODO:
+     * Usual actions:
      * *  Lifecycle-aware component (tied to the activity's lifecycle) receives the ON_RESUME event.
      *  * Lifecycle components can enable any functionality that needs to run while the component is
      *    visible and in the foreground (e.g. starting a camera preview).
@@ -213,7 +196,7 @@ class MainActivity : ComponentActivity() {
      * * The first indication that the user is leaving the Activity (it does not always mean the
      *   Activity is being destroyed).
      *
-     * TODO:
+     * Usual actions:
      * * Release resources, that have been acquired upon entering the RESUME state.
      * * Pause or adjust operations and that you expect to resume shortly while the Activity is in
      *   the Paused state, that:
@@ -292,8 +275,6 @@ class MainActivity : ComponentActivity() {
 
     /** Handle the Activity comes back from the Stopped state to interact with the user.
      *
-     * TODO: what to do in this method?
-     *
      * The Activity is being re-displayed to the user (the user has navigated back to it).
      * Handle only the case of user's session resume:
      * * Track session resume event to handle the period of user inactivity (session logout timeout,
@@ -357,8 +338,6 @@ class MainActivity : ComponentActivity() {
         super.onSaveInstanceState(outState)
 
         addLogLine("onSaveInstanceState(): Activity state saved")
-
-        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, loggedLines.toCollection(ArrayList()))
     }
 
     companion object {

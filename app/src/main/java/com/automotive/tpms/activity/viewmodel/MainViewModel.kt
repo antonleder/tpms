@@ -21,17 +21,26 @@ class MainViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val _count = savedStateHandle.getMutableStateFlow(BUNDLE_COUNT_KEY, 0)
+    private val _logsList =
+        savedStateHandle.getMutableStateFlow(BUNDLE_LOGS_LIST_KEY, mutableListOf<String>())
 
     @OptIn(ExperimentalTime::class)
     val timestamp: LocalTime =
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
     val counter: StateFlow<Int> = _count.asStateFlow()
+    val logs: StateFlow<List<String>> = _logsList.asStateFlow()
 
     fun incrementCounter() {
         savedStateHandle[BUNDLE_COUNT_KEY] = ++_count.value
     }
 
+    fun addNewlog(logLine: String) {
+        _logsList.value.add(logLine)
+        savedStateHandle[BUNDLE_LOGS_LIST_KEY] = _logsList.value
+    }
+
     companion object {
         const val BUNDLE_COUNT_KEY = "count"
+        const val BUNDLE_LOGS_LIST_KEY = "logsList"
     }
 }

@@ -24,7 +24,7 @@
             </intent-filter>
             <meta-data
                 android:name="default_activity_action"
-                android:value="ACTIVITY_A_ACTION" />
+                android:value="ActivityAAction" />
         </activity>
     </application>
 

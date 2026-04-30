@@ -10,7 +10,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import com.automotive.tpms.activity.action.ActivityAction
 import com.automotive.tpms.activity.viewmodel.MainViewModel
@@ -26,8 +25,10 @@ import kotlin.time.ExperimentalTime
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private var activityAction: ActivityAction = ActivityAction.EmptyActivityAction
     private val viewModel: MainViewModel by viewModels()
+    private var activityAction: ActivityAction
+        get() = viewModel.activityAction.value
+        set(value: ActivityAction) = viewModel.updateActivityAction(value)
 
     private fun addLogLine(line: String) {
         @OptIn(ExperimentalTime::class) val now =
@@ -113,7 +114,6 @@ class MainActivity : ComponentActivity() {
             TpmsTheme {
                 Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        activityAction = activityAction,
                         modifier = Modifier.Companion.padding(innerPadding),
                     )
                 }

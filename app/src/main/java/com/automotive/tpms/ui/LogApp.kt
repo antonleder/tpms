@@ -1,6 +1,5 @@
 package com.automotive.tpms.ui
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -23,10 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,7 +71,6 @@ fun FooterComposable(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun MockUp(
-    activityAction: ActivityAction = ActivityAction.EmptyActivityAction,
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = hiltViewModel()
 ) {
@@ -86,6 +80,7 @@ fun MockUp(
 
     val count by viewModel.counter.collectAsState()
     val logLines by viewModel.logs.collectAsState()
+    val activityAction by viewModel.activityAction.collectAsState()
 
     Column(
         modifier = modifier

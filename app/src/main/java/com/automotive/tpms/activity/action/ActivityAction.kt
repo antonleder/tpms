@@ -1,8 +1,6 @@
 package com.automotive.tpms.activity.action
 
 import com.automotive.tpms.activity.MainActivity
-import kotlinx.serialization.modules.EmptySerializersModule
-import kotlin.jvm.java
 
 sealed class ActivityAction(
     val activityName: String,

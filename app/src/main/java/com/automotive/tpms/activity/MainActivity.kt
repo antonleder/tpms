@@ -1,23 +1,69 @@
-package com.automotive.tpms
+package com.automotive.tpms.activity
 
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.automotive.tpms.ui.Greeting
+import com.automotive.tpms.activity.action.ActivityAction
+import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
-class MainActivity : ComponentActivity() {
+/**
+ * TODO:
+ * * activity should not have parameters, only layout parameter for view has sense
+ */
+class MainActivity(
+    private var activityAction: ActivityAction,
+) :
+    ComponentActivity() {
+
+    private val loggedLines = mutableListOf<String>()
+
+    private fun addLogLine(line: String) {
+        @OptIn(ExperimentalTime::class)
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
+        val timestamp = LOG_TIME_PATTERN.format(now)
+        val activityName: String = activityAction.activityName
+        loggedLines.add("[$timestamp] $activityName: $line\n")
+    }
+
+    // TODO: obtain parameters from the Bundle
+    private fun getActivityActionFromManifest(): ActivityAction {
+        val actInfo: ActivityInfo = getPackageManager().getActivityInfo(
+            getComponentName(), PackageManager.GET_META_DATA
+        );
+
+        // Read default activity action from the manifest
+        val modeString: String? =
+            actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
+
+        // Try to convert string to the valid enum value
+        val action = modeString?.let {
+            ActivityAction.fromString(
+                str = modeString,
+                logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
+            )
+        } ?: ActivityAction.EmptyActivityAction()
+
+        return action
+    }
+
     /** Basic application startup logic that happens only once for the entire life of the activity
      *
-     * TODO:
+     * Typical actions:
      * * Initializing member variables: adapters, and data sources.
      * * Associating the activity with a ViewModel for state management.
      * * Using the savedInstanceState Bundle to restore data if the activity is being recreated
@@ -25,6 +71,33 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        savedInstanceState?.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
+            loggedLines.addAll(result.sorted())
+        }
+
+        addLogLine(
+            "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " +
+                    "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
+        )
+
+        // check whether the Activity was launched from other activity with an intent and read
+        // string extra parameter to configure the activity
+        intent?.let {
+            intent.getStringExtra(DEFAULT_ACTIVITY_ACTION_PARAM_NAME)?.let {
+                activityAction = ActivityAction.fromString(
+                    str = it,
+                    logError = { str -> addLogLine("onCreate() - intent string extra ´$DEFAULT_ACTIVITY_ACTION_PARAM_NAME´: $str") })
+            }
+        }
+
+        // Extracting default activity action from the manifest if provided action is empty
+        if (activityAction is ActivityAction.EmptyActivityAction) {
+            activityAction = getActivityActionFromManifest()
+            check(activityAction !is ActivityAction.EmptyActivityAction)
+        }
+
+        addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")
 
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
          * The method annotated with @OnLifecycleEvent is called
@@ -36,15 +109,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TpmsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
+                    MockUp(
+                        activityAction = activityAction,
+                        modifier = Modifier.Companion.padding(innerPadding),
+                        logLines = loggedLines.toMutableStateList()
                     )
                 }
             }
         }
     }
+
+    // TODO: empty Android compose project -> App compose function
+    // move out all of the compose related stuff from Activity
+
 
     /** Restore the Activity state if there was something saved before.
      *
@@ -55,6 +133,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
+
+        addLogLine("onRestoreInstanceState(): Activity state restored")
     }
 
     /**
@@ -76,6 +156,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStart() {
         super.onStart()
+
+        addLogLine("onStart(): Activity visible to the user")
     }
 
     /** Handle the Activity comes to the foreground and interacts with the user.
@@ -101,6 +183,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
+
+        addLogLine("onResume(): Activity in the foreground")
     }
 
     /** Handle the activity is no longer in the foreground due to an interruptive event.
@@ -147,6 +231,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onPause() {
         super.onPause()
+
+        addLogLine("onPause(): Activity in the background")
     }
 
     /** Handle the activity becomes completely invisible to the user.
@@ -186,6 +272,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onStop() {
         super.onStop()
+
+        addLogLine("onStop(): Activity completely invisible to the user")
     }
 
     /** Handle the Activity comes back from the Stopped state to interact with the user.
@@ -207,6 +295,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onRestart() {
         super.onRestart()
+
+        addLogLine("onRestart(): Activity returned to the foreground")
     }
 
     /** Handle the Activity pre-destruction
@@ -229,9 +319,11 @@ class MainActivity : ComponentActivity() {
      */
     override fun onDestroy() {
         super.onDestroy()
+
+        addLogLine("onDestroy(): Activity destroyed")
     }
 
-    /** Handle HActivity's state saving before stopping it.
+    /** Handle Activity's state saving before stopping it.
      *
      * Is not called when:
      * * the user explicitly closes the activity,
@@ -249,6 +341,23 @@ class MainActivity : ComponentActivity() {
      */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+
+        addLogLine("onSaveInstanceState(): Activity state saved")
+
+        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, loggedLines.toCollection(ArrayList()))
+    }
+
+    companion object {
+        const val BUNDLE_LOG_LINES_KEY = "logLines"
+        val LOG_TIME_PATTERN = LocalTime.Format {
+            hour()
+            char(':')
+            minute()
+            char(':')
+            second()
+            char('.')
+            secondFraction(3) // 3 цифры для миллисекунд
+        }
+        const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
     }
 }
-

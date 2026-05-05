@@ -1,8 +1,11 @@
 package com.automotive.tpms.activity
 
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.automotive.tpms.activity.action.ActivityAction
+import com.automotive.tpms.activity.action.nextActivity
 import com.automotive.tpms.activity.viewmodel.MainViewModel
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
@@ -121,10 +125,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TpmsTheme {
-                Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        parentModifier = Modifier.Companion.padding(innerPadding),
-                        logFn = ::addLogLine
+                        parentModifier = Modifier.padding(innerPadding),
+                        logFn = ::addLogLine,
+                        navigateNextActivityFn = { context: Context ->
+                            val intent = Intent(/* packageContext = */ context,
+                                /* cls = */ MainActivity::class.java
+                            ).apply {
+                                putExtra(
+                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
+                                    activityAction.nextActivity()::class.simpleName
+                                )
+                            }
+                            intent.resolveActivity(context.packageManager)?.let {
+                                context.startActivity(intent)
+                            } ?: Log.e(/* tag = */ "MainActivity", /* msg = */
+                                "unable to start the next activity"
+                            )
+                        }
                     )
                 }
             }

@@ -79,6 +79,7 @@ private fun SandBox(
     },
     activityAction: ActivityAction = ActivityAction.ActivityAAction,
     incrementCounter: () -> Unit = {},
+    navigateNextActivityFn: (Context) -> Unit = {}
 ) {
     val logMaxHeightFraction = 0.65f
     val ctrlsMaxHeightFraction = 1.0f - logMaxHeightFraction
@@ -100,9 +101,7 @@ private fun SandBox(
             Spacer(modifier = modifier.padding(vertical = 4.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                /*.border(1.dp, Color.Black)*/,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(text = "${activityAction.activityName} (counter: $count)")
@@ -115,8 +114,7 @@ private fun SandBox(
                 LazyColumn(
                     modifier = Modifier
                         .background(logListBgcolor)
-                        .fillMaxSize(),
-                    state = listState
+                        .fillMaxSize(), state = listState
                 ) {
                     stickyHeader { HeaderComposable() }
 
@@ -147,17 +145,7 @@ private fun SandBox(
                     // Open another Activity
                     Button(
                         onClick = {
-                            val intent = Intent(context, MainActivity::class.java).apply {
-                                putExtra(
-                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
-                                    activityAction.nextActivity()::class.simpleName
-                                )
-                            }
-                            if (intent.resolveActivity(context.packageManager) != null) {
-                                context.startActivity(intent)
-                            } else {
-                                // TODO: show error message
-                            }
+                            navigateNextActivityFn(context)
                         }, modifier = btnModifier
                     ) {
                         Text(
@@ -209,7 +197,8 @@ private fun SandBox(
 fun MockUp(
     parentModifier: Modifier = Modifier,
     viewModel: MainViewModel = hiltViewModel(),
-    logFn: (String) -> Unit = {}
+    logFn: (String) -> Unit = {},
+    navigateNextActivityFn: (Context) -> Unit = {}
 ) {
     val viewmodelCountState by viewModel.counter.collectAsState()
     val viewmodelLogLines by viewModel.logs.collectAsState()
@@ -222,6 +211,7 @@ fun MockUp(
         count = viewmodelCountState,
         logLines = viewmodelLogLines,
         activityAction = viewmodelActivityAction,
-        incrementCounter = viewModel::incrementCounter
+        incrementCounter = viewModel::incrementCounter,
+        navigateNextActivityFn = navigateNextActivityFn
     )
 }

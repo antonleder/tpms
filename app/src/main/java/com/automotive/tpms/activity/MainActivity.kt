@@ -25,6 +25,15 @@ import kotlin.time.ExperimentalTime
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    /**
+     * Usage of hiltViewModel() is not possible as a property delegate in MainActivity for two main reasons:
+     * * It is a Composable function: hiltViewModel() is annotated with @Composable.
+     * * It is not a property delegate. The by keyword in Kotlin requires a delegate object.
+     *   hiltViewModel() is a regular function that returns the ViewModel instance directly, not a delegate.
+     *
+     * Activity is annotated with @AndroidEntryPoint => Hilt automatically hooks into the default ViewModelProvider.Factory.
+     * This means by viewModels() will correctly inject Hilt-managed MainViewModel without any extra configuration.
+     */
     private val viewModel: MainViewModel by viewModels()
     private var activityAction: ActivityAction
         get() = viewModel.activityAction.value
@@ -75,7 +84,7 @@ class MainActivity : ComponentActivity() {
                     "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
         )
 
-        addLogLine("onCreate(): ViewModel timestamp: ${viewModel.timestamp}")
+        addLogLine("onCreate(): ViewModel timestamp: ${viewModel.timestamp}\nViewModel: ${viewModel.toString()}")
 
         // check whether the Activity was launched from other activity with an intent and read
         // string extra parameter to configure the activity
@@ -114,7 +123,8 @@ class MainActivity : ComponentActivity() {
             TpmsTheme {
                 Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        modifier = Modifier.Companion.padding(innerPadding),
+                        parentModifier = Modifier.Companion.padding(innerPadding),
+                        logFn = ::addLogLine
                     )
                 }
             }
@@ -349,7 +359,7 @@ class MainActivity : ComponentActivity() {
             char(':')
             second()
             char('.')
-            secondFraction(3) // 3 цифры для миллисекунд
+            secondFraction(3)
         }
         const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
     }

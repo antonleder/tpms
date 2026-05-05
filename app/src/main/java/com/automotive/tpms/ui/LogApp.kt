@@ -3,11 +3,11 @@ package com.automotive.tpms.ui
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,129 +62,166 @@ fun FooterComposable(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .padding(4.dp), contentAlignment = Alignment.Center
     ) {
-        Text(stringResource(R.string.app_logs_footer), style = MaterialTheme.typography.labelMedium)
+        Text(
+            stringResource(id = R.string.app_logs_footer),
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
-// TODO: coding style
-// TODO: compose should not know how screen switching is performed -> replace with Navigator in future
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = "id:pixel_5", fontScale = 1.0f, showSystemUi = true)
 @Composable
-fun MockUp(
+private fun SandBox(
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel = hiltViewModel()
+    count: Int = 0,
+    logLines: List<String> = (0..10).map { num ->
+        String.format("[00:00:%02d] Log line %d", num, num)
+    },
+    activityAction: ActivityAction = ActivityAction.ActivityAAction,
+    incrementCounter: () -> Unit = {},
 ) {
-    val LOG_MAX_HEIGHT_FRACTION = 0.65f
-    val CTRLS_MAX_HEIGHT_FRACTION = 1.0f - LOG_MAX_HEIGHT_FRACTION
-    val INTERNAL_PADDING = 8.dp
+    val logMaxHeightFraction = 0.65f
+    val ctrlsMaxHeightFraction = 1.0f - logMaxHeightFraction
+    val internalPadding = 8.dp
 
-    val count by viewModel.counter.collectAsState()
-    val logLines by viewModel.logs.collectAsState()
-    val activityAction by viewModel.activityAction.collectAsState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(INTERNAL_PADDING)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp,
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.Black),
-            horizontalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(internalPadding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "${activityAction.activityName} (counter: $count)")
-        }
+            Spacer(modifier = modifier.padding(vertical = 4.dp))
 
-        Row(modifier = Modifier.fillMaxHeight(LOG_MAX_HEIGHT_FRACTION)) {
-            val LOG_LIST_BGCOLOR = Color.LightGray
-            val listState = rememberLazyListState()
-
-            LazyColumn(
+            Row(
                 modifier = Modifier
-                    .background(LOG_LIST_BGCOLOR)
-                    .fillMaxSize(),
-                state = listState
+                    .fillMaxWidth()
+                /*.border(1.dp, Color.Black)*/,
+                horizontalArrangement = Arrangement.Center
             ) {
-                stickyHeader { HeaderComposable() }
-
-                items(logLines) { line ->
-                    Text(text = line)
-                }
-
-                item { FooterComposable() }
+                Text(text = "${activityAction.activityName} (counter: $count)")
             }
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(CTRLS_MAX_HEIGHT_FRACTION)
-        ) {
-            val BTN_PADDING = 8.dp
+            Row(modifier = Modifier.fillMaxHeight(logMaxHeightFraction)) {
+                val logListBgcolor = Color.LightGray
+                val listState = rememberLazyListState()
 
-            Column(
-                modifier = Modifier.fillMaxHeight()
-                    .padding(BTN_PADDING), verticalArrangement = Arrangement.Center
+                LazyColumn(
+                    modifier = Modifier
+                        .background(logListBgcolor)
+                        .fillMaxSize(),
+                    state = listState
+                ) {
+                    stickyHeader { HeaderComposable() }
+
+                    items(logLines) { line ->
+                        Text(text = line)
+                    }
+
+                    item { FooterComposable() }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(ctrlsMaxHeightFraction)
             ) {
-                val context: Context = LocalContext.current
-                val btnModifier = Modifier.fillMaxWidth()
+                val btnPadding = 8.dp
 
-                // Open another Activity
-                Button(
-                    onClick = {
-                        val intent = Intent(context, MainActivity::class.java).apply {
-                            putExtra(
-                                DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
-                                activityAction.nextActivity()::class.simpleName
-                            )
-                        }
-                        if (intent.resolveActivity(context.packageManager) != null) {
-                            context.startActivity(intent)
-                        } else {
-                            // TODO: show error message
-                        }
-                    }, modifier = btnModifier
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(btnPadding),
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.act_btn_text) + " " + activityAction.nextActivity().activityName
-                    )
-                }
+                    val context: Context = LocalContext.current
+                    val btnModifier = Modifier.fillMaxWidth()
 
-                Button(onClick = {
-                    viewModel.incrementCounter()
-                }, modifier = btnModifier) {
-                    Text(text = stringResource(R.string.increment_counter))
-                }
+                    // Open another Activity
+                    Button(
+                        onClick = {
+                            val intent = Intent(context, MainActivity::class.java).apply {
+                                putExtra(
+                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
+                                    activityAction.nextActivity()::class.simpleName
+                                )
+                            }
+                            if (intent.resolveActivity(context.packageManager) != null) {
+                                context.startActivity(intent)
+                            } else {
+                                // TODO: show error message
+                            }
+                        }, modifier = btnModifier
+                    ) {
+                        Text(
+                            text = stringResource(R.string.act_btn_text) + " " + activityAction.nextActivity().activityName
+                        )
+                    }
 
-                // Start background task (Service)
-                Button(
-                    onClick = {}, modifier = btnModifier
-                ) {
-                    Text(text = stringResource(R.string.start_bg_service_btn_text))
-                }
+                    Button(onClick = {
+                        incrementCounter()
+                    }, modifier = btnModifier) {
+                        Text(text = stringResource(R.string.increment_counter))
+                    }
 
-                // Send broadcast
-                Button(
-                    onClick = {}, modifier = btnModifier
-                ) {
-                    Text(text = stringResource(R.string.send_bcast_btn_text))
-                }
+                    // Start background task (Service)
+                    Button(
+                        onClick = {}, modifier = btnModifier
+                    ) {
+                        Text(text = stringResource(R.string.start_bg_service_btn_text))
+                    }
 
-                // Request runtime permission
-                Button(
-                    onClick = {}, modifier = btnModifier
-                ) {
-                    Text(text = stringResource(R.string.runtime_perm_btn_text))
-                }
+                    // Send broadcast
+                    Button(
+                        onClick = {}, modifier = btnModifier
+                    ) {
+                        Text(text = stringResource(R.string.send_bcast_btn_text))
+                    }
 
-                // Read data from system ContentProvider (e.g. Contacts or MediaStore — read-only via ContentResolver)
-                Button(
-                    onClick = {}, modifier = btnModifier
-                ) {
-                    Text(text = stringResource(R.string.read_cp_data_btn_text))
+                    // Request runtime permission
+                    Button(
+                        onClick = {}, modifier = btnModifier
+                    ) {
+                        Text(text = stringResource(R.string.runtime_perm_btn_text))
+                    }
+
+                    // Read data from system ContentProvider (e.g. Contacts or MediaStore — read-only via ContentResolver)
+                    Button(
+                        onClick = {}, modifier = btnModifier
+                    ) {
+                        Text(text = stringResource(R.string.read_cp_data_btn_text))
+                    }
                 }
             }
         }
     }
+}
+
+// TODO: compose should not know how screen switching is performed -> replace with Navigator in future
+@Composable
+fun MockUp(
+    parentModifier: Modifier = Modifier,
+    viewModel: MainViewModel = hiltViewModel(),
+    logFn: (String) -> Unit = {}
+) {
+    val viewmodelCountState by viewModel.counter.collectAsState()
+    val viewmodelLogLines by viewModel.logs.collectAsState()
+    val viewmodelActivityAction by viewModel.activityAction.collectAsState()
+
+    logFn("[Compose] MockUp: view model: $viewModel")
+
+    SandBox(
+        modifier = parentModifier,
+        count = viewmodelCountState,
+        logLines = viewmodelLogLines,
+        activityAction = viewmodelActivityAction,
+        incrementCounter = viewModel::incrementCounter
+    )
 }

@@ -1,19 +1,25 @@
 package com.automotive.tpms.activity
 
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import com.automotive.tpms.activity.action.ActivityAction
+import com.automotive.tpms.activity.action.nextActivity
+import com.automotive.tpms.activity.viewmodel.MainViewModel
 import com.automotive.tpms.ui.MockUp
 import com.automotive.tpms.ui.theme.TpmsTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.char
@@ -21,23 +27,28 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-/**
- * TODO:
- * * activity should not have parameters, only layout parameter for view has sense
- */
-class MainActivity(
-    private var activityAction: ActivityAction,
-) :
-    ComponentActivity() {
-
-    private val loggedLines = mutableListOf<String>()
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    /**
+     * Usage of hiltViewModel() is not possible as a property delegate in MainActivity for two main reasons:
+     * * It is a Composable function: hiltViewModel() is annotated with @Composable.
+     * * It is not a property delegate. The by keyword in Kotlin requires a delegate object.
+     *   hiltViewModel() is a regular function that returns the ViewModel instance directly, not a delegate.
+     *
+     * Activity is annotated with @AndroidEntryPoint => Hilt automatically hooks into the default ViewModelProvider.Factory.
+     * This means by viewModels() will correctly inject Hilt-managed MainViewModel without any extra configuration.
+     */
+    private val viewModel: MainViewModel by viewModels()
+    private var activityAction: ActivityAction
+        get() = viewModel.activityAction.value
+        set(value: ActivityAction) = viewModel.updateActivityAction(value)
 
     private fun addLogLine(line: String) {
-        @OptIn(ExperimentalTime::class)
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
+        @OptIn(ExperimentalTime::class) val now =
+            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
         val timestamp = LOG_TIME_PATTERN.format(now)
         val activityName: String = activityAction.activityName
-        loggedLines.add("[$timestamp] $activityName: $line\n")
+        viewModel.addNewlog("[$timestamp] $activityName: $line\n")
     }
 
     // TODO: obtain parameters from the Bundle
@@ -50,13 +61,13 @@ class MainActivity(
         val modeString: String? =
             actInfo.metaData.getString(DEFAULT_ACTIVITY_ACTION_PARAM_NAME);
 
-        // Try to convert string to the valid enum value
+        // Try to convert string to the valid value
         val action = modeString?.let {
             ActivityAction.fromString(
                 str = modeString,
                 logError = { str -> addLogLine("onCreate() - read default activity action from the manifest: $str") }
             )
-        } ?: ActivityAction.EmptyActivityAction()
+        } ?: ActivityAction.EmptyActivityAction
 
         return action
     }
@@ -72,14 +83,12 @@ class MainActivity(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        savedInstanceState?.getStringArrayList(BUNDLE_LOG_LINES_KEY)?.let { result ->
-            loggedLines.addAll(result.sorted())
-        }
-
         addLogLine(
             "onCreate(): intent used to start the Activity: ${if (intent != null) intent.toString() else "null"} " +
                     "${if (intent != null && intent.extras != null) " extras:" + intent.extras.toString() else ""} "
         )
+
+        addLogLine("onCreate(): ViewModel timestamp: ${viewModel.timestamp}\nViewModel: ${viewModel.toString()}")
 
         // check whether the Activity was launched from other activity with an intent and read
         // string extra parameter to configure the activity
@@ -99,30 +108,48 @@ class MainActivity(
 
         addLogLine("onCreate(): Activity created (${if (savedInstanceState != null) "not first creation" else "first creation"})")
 
+        /** Basic application startup logic that happens only once for the entire life of the activity
+         *
+         * Typical actions:
+         * * Initializing member variables: adapters, and data sources.
+         * * Associating the activity with a ViewModel for state management.
+         * * Using the savedInstanceState Bundle to restore data if the activity is being recreated
+         *   (e.g., after a screen rotation).
+         */
+
         /** Hooked up lifecycle-aware component that receives the ON_CREATE event.
          * The method annotated with @OnLifecycleEvent is called
          * => lifecycle-aware component performs any setup code it needs for the created state.
-         *
-         * TODO: Does this happen implicitly or requires explicit code operations?
          */
 
         enableEdgeToEdge()
         setContent {
             TpmsTheme {
-                Scaffold(modifier = Modifier.Companion.fillMaxWidth()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
                     MockUp(
-                        activityAction = activityAction,
-                        modifier = Modifier.Companion.padding(innerPadding),
-                        logLines = loggedLines.toMutableStateList()
+                        parentModifier = Modifier.padding(innerPadding),
+                        logFn = ::addLogLine,
+                        navigateNextActivityFn = { context: Context ->
+                            viewModel.toNextActivityAction()
+                            val intent = Intent(/* packageContext = */ context,
+                                /* cls = */ MainActivity::class.java
+                            ).apply {
+                                putExtra(
+                                    DEFAULT_ACTIVITY_ACTION_PARAM_NAME,
+                                    activityAction.nextActivity()::class.simpleName
+                                )
+                            }
+                            intent.resolveActivity(context.packageManager)?.let {
+                                context.startActivity(intent)
+                            } ?: Log.e(/* tag = */ "MainActivity", /* msg = */
+                                "unable to start the next activity"
+                            )
+                        }
                     )
                 }
             }
         }
     }
-
-    // TODO: empty Android compose project -> App compose function
-    // move out all of the compose related stuff from Activity
-
 
     /** Restore the Activity state if there was something saved before.
      *
@@ -143,7 +170,7 @@ class MainActivity(
      *
      * Called every time the Activity returns from the background.
      *
-     * TODO:
+     * Usual actions:
      * * Initialize maintained UI.
      * * Lifecycle-aware component (tied to the activity's lifecycle) receives the ON_START event.
      * * Dynamic BroadcastReceivers registration.
@@ -164,7 +191,7 @@ class MainActivity(
      *
      * Occurs every time the Activity is returned to the foreground.
      *
-     * TODO:
+     * Usual actions:
      * *  Lifecycle-aware component (tied to the activity's lifecycle) receives the ON_RESUME event.
      *  * Lifecycle components can enable any functionality that needs to run while the component is
      *    visible and in the foreground (e.g. starting a camera preview).
@@ -199,7 +226,7 @@ class MainActivity(
      * * The first indication that the user is leaving the Activity (it does not always mean the
      *   Activity is being destroyed).
      *
-     * TODO:
+     * Usual actions:
      * * Release resources, that have been acquired upon entering the RESUME state.
      * * Pause or adjust operations and that you expect to resume shortly while the Activity is in
      *   the Paused state, that:
@@ -278,8 +305,6 @@ class MainActivity(
 
     /** Handle the Activity comes back from the Stopped state to interact with the user.
      *
-     * TODO: what to do in this method?
-     *
      * The Activity is being re-displayed to the user (the user has navigated back to it).
      * Handle only the case of user's session resume:
      * * Track session resume event to handle the period of user inactivity (session logout timeout,
@@ -343,8 +368,6 @@ class MainActivity(
         super.onSaveInstanceState(outState)
 
         addLogLine("onSaveInstanceState(): Activity state saved")
-
-        outState.putStringArrayList(BUNDLE_LOG_LINES_KEY, loggedLines.toCollection(ArrayList()))
     }
 
     companion object {
@@ -356,7 +379,7 @@ class MainActivity(
             char(':')
             second()
             char('.')
-            secondFraction(3) // 3 цифры для миллисекунд
+            secondFraction(3)
         }
         const val DEFAULT_ACTIVITY_ACTION_PARAM_NAME = "default_activity_action"
     }

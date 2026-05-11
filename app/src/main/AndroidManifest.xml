@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".app.TpmsApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,9 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Tpms"
-        android:appComponentFactory=".activity.factory.TpmsActivityFactory"
-        tools:replace="android:appComponentFactory">
+        android:theme="@style/Theme.Tpms">
         <activity
             android:name=".activity.MainActivity"
             android:exported="true"

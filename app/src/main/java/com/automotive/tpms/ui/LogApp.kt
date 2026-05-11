@@ -1,5 +1,6 @@
 package com.automotive.tpms.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -95,10 +96,10 @@ private fun SandBox(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(internalPadding),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = modifier.padding(vertical = 4.dp))
+            Spacer(modifier = modifier.padding(vertical = 1.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -192,7 +193,7 @@ private fun SandBox(
     }
 }
 
-// TODO: compose should not know how screen switching is performed -> replace with Navigator in future
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun MockUp(
     parentModifier: Modifier = Modifier,
@@ -202,7 +203,9 @@ fun MockUp(
 ) {
     val viewmodelCountState by viewModel.counter.collectAsState()
     val viewmodelLogLines by viewModel.logs.collectAsState()
-    val viewmodelActivityAction by viewModel.activityAction.collectAsState()
+
+    // Activity action is not expected to be changed => should not affect the composition
+    val viewmodelActivityAction = viewModel.activityAction.value
 
     logFn("[Compose] MockUp: view model: $viewModel")
 

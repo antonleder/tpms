@@ -1,17 +1,12 @@
 package com.automotive.tpms.activity.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.SavedStateHandle
 import com.automotive.tpms.activity.action.ActivityAction
-import com.automotive.tpms.activity.action.ActivityAction.Companion.fromString
 import com.automotive.tpms.activity.action.nextActivity
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.time.Clock
 import kotlinx.datetime.LocalTime
@@ -48,9 +43,9 @@ class MainViewModel @Inject constructor(
         savedStateHandle[BUNDLE_LOGS_LIST_KEY] = _logsList.value
     }
 
-    fun nextActivityAction() {
-        _activityAction.value = _activityAction.value.nextActivity()
-        savedStateHandle[BUNDLE_ACTIVITY_ACTION_KEY] = _activityAction.value.activityName
+    fun toNextActivityAction() {
+        val next = _activityAction.value.nextActivity()
+        savedStateHandle[BUNDLE_ACTIVITY_ACTION_KEY] = next.activityName
     }
 
     fun updateActivityAction(action: ActivityAction) {

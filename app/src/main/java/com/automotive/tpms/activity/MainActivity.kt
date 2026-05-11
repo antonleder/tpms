@@ -130,6 +130,7 @@ class MainActivity : ComponentActivity() {
                         parentModifier = Modifier.padding(innerPadding),
                         logFn = ::addLogLine,
                         navigateNextActivityFn = { context: Context ->
+                            viewModel.toNextActivityAction()
                             val intent = Intent(/* packageContext = */ context,
                                 /* cls = */ MainActivity::class.java
                             ).apply {
